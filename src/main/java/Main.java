@@ -2,6 +2,7 @@ import four_kyu.DoubleLinear;
 import four_kyu.Funnel;
 import four_kyu.Snail;
 import three_kyu.Anagrams;
+import three_kyu.Spiralizor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -109,6 +110,8 @@ public class Main {
         Anagrams an = new Anagrams();
         System.out.println(an.listPosition("QUESTION"));
         //an.findAllWords(Arrays.asList("I","O","S"));
+        Spiralizor sp = new Spiralizor();
+        sp.spiralize(8);
     }
 
 
