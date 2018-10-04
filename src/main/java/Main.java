@@ -1,6 +1,10 @@
 import four_kyu.DoubleLinear;
-import javaBasics.GenClass;
+import four_kyu.Funnel;
+import four_kyu.Snail;
+import three_kyu.Anagrams;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
@@ -16,13 +20,6 @@ public class Main {
         Vector<String> vec = new Vector<>();
         System.out.println(eset);*/
 
-        GenClass<String, String> g1 = new GenClass<>("A", "Value A");
-        System.out.println("Key- " + g1.getKey());
-        System.out.println("Value- " + g1.getValue());
-
-        GenClass<Integer, String> g2 = new GenClass<>(1, "Value 1");
-        System.out.println("Key- " + g2.getKey());
-        System.out.println("Value- " + g2.getValue());
 
         /*String text    =
                 "This is the text to be searched " +
@@ -91,8 +88,27 @@ public class Main {
         List<Double> ld = Arrays.asList(1.2, 3.8, 8.2);
         System.out.println("sum = " + sumOfElements(ld));
 */
-        DoubleLinear dl = new DoubleLinear();
-        dl.dblLinear(10);
+        /*Snail sn = new Snail();
+        System.out.println(sn.snail(new int[][]
+                {
+                        {1, 2, 3, 9},
+                        {4, 5, 6, 4},
+                        {7, 8, 9, 1},
+                        {1, 2, 3, 4}
+                }));
+        int[] arr1 = {1};
+        int[] arr2 = {1};
+        System.out.println(arr1 == arr2);*/
+        List<String> letterList = new ArrayList<>(Arrays.asList("q","u","e","s","t","i","o","n"));
+        letterList.sort(String::compareTo);
+        System.out.println(letterList);
+
+        List<String> letterList2 = new ArrayList<>(Arrays.asList("A","A","B","C","C"));
+
+
+        Anagrams an = new Anagrams();
+        System.out.println(an.listPosition("QUESTION"));
+        //an.findAllWords(Arrays.asList("I","O","S"));
     }
 
 
