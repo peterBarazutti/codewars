@@ -30,7 +30,6 @@ public class Snail {
                 xCoord = rowIndex;
                 yCoord = columnIndex;
                 traversedCells.add(storedStep);
-                System.out.println(array[rowIndex][columnIndex]);
                 result[counter++] = array[xCoord][yCoord];
             } else {
                 nextStep = steps[++directionIndex % 4];

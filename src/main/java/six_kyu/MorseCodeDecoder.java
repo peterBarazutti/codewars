@@ -57,11 +57,9 @@ public class MorseCodeDecoder {
 
     public static String decode(String morseCode) {
         return Arrays.stream(morseCode.trim().split("   "))
-                .map(word -> {
-                    return Arrays.stream(word.split(" "))
-                            .map(MorseCodeDecoder::get)
-                            .collect(Collectors.joining());
-                })
+                .map(word -> Arrays.stream(word.split(" "))
+                        .map(MorseCodeDecoder::get)
+                        .collect(Collectors.joining()))
                 .collect(Collectors.joining(" "));
     }
 

@@ -7,8 +7,6 @@ import java.util.List;
 //https://www.codewars.com/kata/twice-linear/train/java
 public class DoubleLinear {
 
-
-
     public static int dblLinear(int n) {
 
         int y, z;
