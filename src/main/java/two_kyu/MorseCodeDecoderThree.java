@@ -1,6 +1,9 @@
 package two_kyu;
 
+import sun.nio.cs.CharsetMapping;
+
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -58,6 +61,7 @@ public class MorseCodeDecoderThree {
 
 
     public static String decodeBits(String bits) {
+        if (bits.length() == 0) return "";
         String formattedBitString = bits.trim().replaceAll("^0*|0*$", "");
 
         int[][] boundariesZero = determineCharBoundaries('0', formattedBitString);
@@ -118,6 +122,17 @@ public class MorseCodeDecoderThree {
                 .sorted()
                 .collect(Collectors.toList());
 
+        int mode = data
+                .stream()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet()
+                .stream()
+                .max(Comparator.comparing(Map.Entry::getValue))
+                .get()
+                .getKey();
+
+        int[] expectedLength = {1, 3, 7};
+
         int totalNumberOfCharSequences = charList.size();
         double[] centroids = new double[k];
         List<Integer>[] groups = new List[k];
@@ -125,7 +140,7 @@ public class MorseCodeDecoderThree {
 
         // set initial values
         for (int i = 0; i < k; i++) {
-            centroids[i] = data.get(i * ((totalNumberOfCharSequences - 1) / (k - 1))) + i;
+            centroids[i] = mode * expectedLength[i];
             List<Integer> group = new ArrayList<>(data.subList(i * totalNumberOfCharSequences / k, (i + 1) * totalNumberOfCharSequences / k));
             groups[i] = group;
             List<Integer> tempGroup = new ArrayList<>();
@@ -152,13 +167,16 @@ public class MorseCodeDecoderThree {
             }
 
             if (!finished) {
+                double primaryCentroid = tempGroups[0]
+                        .stream()
+                        .mapToDouble(d -> d)
+                        .reduce(0, (a, b) -> a + b) / groups[0].size();
+
                 for (int i = 0; i < k; i++) {
                     groups[i].clear();
                     groups[i].addAll(tempGroups[i]);
 
-                    centroids[i] = (double) groups[i]
-                            .stream()
-                            .reduce(0, (a, b) -> a + b) / groups[i].size();
+                    centroids[i] = primaryCentroid * expectedLength[i];
 
                     tempGroups[i].clear();
                 }
