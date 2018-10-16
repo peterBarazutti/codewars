@@ -64,14 +64,14 @@ public class MorseCodeDecoderThree {
 
         if (formattedBitString.length() == 0) return "";
 
-        int[][] boundariesZero = determineCharBoundaries('0', formattedBitString);
-        int[][] boundariesOne = determineCharBoundaries('1', formattedBitString);
+        int[][] boundaries = determineCharBoundaries(formattedBitString);
 
-        String dashPattern = String.format("(?<!1)[1]{%d,%d}(?!1)", boundariesOne[1][0], boundariesOne[1][1]);
-        String dotPattern = String.format("(?<!1)[1]{%d,%d}(?!1)", boundariesOne[0][0], boundariesOne[0][1]);
-        String wordSpacePattern = String.format("(?<!0)[0]{%d,%d}(?!0)", boundariesZero[2][0], boundariesZero[2][1]);
-        String letterSpacePattern = String.format("(?<!0)[0]{%d,%d}(?!0)", boundariesZero[1][0], boundariesZero[1][1]);
-        String morseCharSpaceSpacePattern = String.format("(?<!0)[0]{%d,%d}(?!0)", boundariesZero[0][0], boundariesZero[0][1]);
+
+        String dashPattern = String.format("(?<!1)[1+]{%d,%d}(?!1)", boundaries[1][0], boundaries[2][1]);
+        String dotPattern = String.format("(?<!1)[1+]{%d,%d}(?!1)", boundaries[0][0], boundaries[0][1]);
+        String wordSpacePattern = String.format("(?<!0)[0+]{%d,%d}(?!0)", boundaries[2][0], boundaries[2][1]);
+        String letterSpacePattern = String.format("(?<!0)[0+]{%d,%d}(?!0)", boundaries[1][0], boundaries[1][1]);
+        String morseCharSpaceSpacePattern = String.format("(?<!0)[0+]{%d,%d}(?!0)", boundaries[0][0], boundaries[0][1]);
 
         formattedBitString = formattedBitString.replaceAll(dashPattern, "-");
         formattedBitString = formattedBitString.replaceAll(dotPattern, ".");
@@ -82,20 +82,22 @@ public class MorseCodeDecoderThree {
         return formattedBitString;
     }
 
-    private static int[][] determineCharBoundaries(char ch, String formattedBitString) {
-        String charString = "(" + ch + "+)";
-        Pattern charPattern = Pattern.compile(charString);
-        Matcher groupCharMatcher = charPattern.matcher(formattedBitString);
+    private static int[][] determineCharBoundaries(String formattedBitString) {
         List<String> charStringList = new ArrayList<>();
-        while (groupCharMatcher.find()) {
-            charStringList.add(groupCharMatcher.group(1));
+        String charZeroString = "(0+)";
+        Pattern charZeroPattern = Pattern.compile(charZeroString);
+        Matcher groupZeroCharMatcher = charZeroPattern.matcher(formattedBitString);
+        while (groupZeroCharMatcher.find()) {
+            charStringList.add(groupZeroCharMatcher.group(1));
+        }
+        String charOneString = "(1+)";
+        Pattern charOnePattern = Pattern.compile(charOneString);
+        Matcher groupOneCharMatcher = charOnePattern.matcher(formattedBitString);
+        while (groupOneCharMatcher.find()) {
+            charStringList.add(groupOneCharMatcher.group(1));
         }
 
-        int k = 0;
-        if (ch == '0') k = 3;
-        else if (ch == '1') k = 2;
-
-        int[][] result = kClustering(charStringList, k);
+        int[][] result = kClustering(charStringList, 3);
         return result;
     }
 
@@ -111,11 +113,8 @@ public class MorseCodeDecoderThree {
 
     private static int[][] kClustering(List<String> charList, int k) {
         int[][] result = new int[k][2];
-        if (charList.isEmpty()) {
-            for (int i = 0; i < k; i++) {
-                Arrays.fill(result[i], 1000);
-            }
-            return result;
+        for (int i = 0; i < k; i++) {
+            Arrays.fill(result[i], 1000);
         }
         List<Integer> data = charList
                 .stream()
@@ -128,14 +127,11 @@ public class MorseCodeDecoderThree {
                 .collect(Collectors.toList());
 
         int[] expectedLength = {1, 9, 49};
-        BigDecimal initialCentroid =BigDecimal.valueOf(
-                data
-                        .stream()
-                        .filter(num -> num >= 2)
-                        .min(Integer::compareTo)
-                        .orElse(1));
+        int initialCentroid = data
+                .stream()
+                .min(Integer::compareTo)
+                .orElse(1);
 
-        int totalNumberOfCharSequences = charList.size();
         BigDecimal[] centroids = new BigDecimal[k];
         List<Integer>[] groups = new List[k];
         List<Integer>[] tempGroups = new List[k];
@@ -143,27 +139,18 @@ public class MorseCodeDecoderThree {
 
         // set initial values
         for (int i = 0; i < k; i++) {
-            centroids[i] = initialCentroid
+            centroids[i] = BigDecimal.valueOf(initialCentroid)
                     .multiply(BigDecimal.valueOf(expectedLength[i]));
             List<Integer> group = new ArrayList<>();
             groups[i] = group;
+
             List<Integer> tempGroup = new ArrayList<>();
             tempGroups[i] = tempGroup;
         }
 
-        for (int record : data) {
-            BigDecimal[] distances = new BigDecimal[k];
-            for (int i = 0; i < k; i++) {
-                distances[i] = BigDecimal.valueOf(record).subtract(centroids[i]).abs();
-            }
-            BigDecimal smallestDist = Arrays
-                    .stream(distances)
-                    .min(BigDecimal::compareTo)
-                    .get();
-            for (int i = 0; i < k; i++) {
-                if (distances[i].equals(smallestDist)) groups[i].add(record);
-            }
-        }
+        groups[0] = data.stream().filter(num -> num >= 1 && num < 2 * initialCentroid).collect(Collectors.toList());
+        groups[1] = data.stream().filter(num -> num >= 2 * initialCentroid && num < 6 * initialCentroid).collect(Collectors.toList());
+        groups[2] = data.stream().filter(num -> num >= 6 * initialCentroid).collect(Collectors.toList());
 
         // running clustering
         boolean finished = false;
