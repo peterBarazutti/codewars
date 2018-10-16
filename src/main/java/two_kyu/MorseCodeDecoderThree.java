@@ -1,9 +1,8 @@
 package two_kyu;
 
-import sun.nio.cs.CharsetMapping;
 
+import java.math.BigDecimal;
 import java.util.*;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,8 +60,9 @@ public class MorseCodeDecoderThree {
 
 
     public static String decodeBits(String bits) {
-        if (bits.length() == 0) return "";
         String formattedBitString = bits.trim().replaceAll("^0*|0*$", "");
+
+        if (formattedBitString.length() == 0) return "";
 
         int[][] boundariesZero = determineCharBoundaries('0', formattedBitString);
         int[][] boundariesOne = determineCharBoundaries('1', formattedBitString);
@@ -100,6 +100,7 @@ public class MorseCodeDecoderThree {
     }
 
     public static String decodeMorse(String morseCode) {
+        if (morseCode.length() == 0) return "";
         return Arrays
                 .stream(morseCode.split("   "))
                 .map(word -> Arrays.stream(word.split(" "))
@@ -112,39 +113,56 @@ public class MorseCodeDecoderThree {
         int[][] result = new int[k][2];
         if (charList.isEmpty()) {
             for (int i = 0; i < k; i++) {
-                Arrays.fill(result[i], 0);
+                Arrays.fill(result[i], 1000);
             }
             return result;
         }
         List<Integer> data = charList
                 .stream()
                 .map(String::length)
+                .map(Double::valueOf)
+                .map(num -> Math.pow(num, 2d))
                 .sorted()
+                .mapToInt(Double::intValue)
+                .boxed()
                 .collect(Collectors.toList());
 
-        int mode = data
-                .stream()
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-                .entrySet()
-                .stream()
-                .max(Comparator.comparing(Map.Entry::getValue))
-                .get()
-                .getKey();
-
-        int[] expectedLength = {1, 3, 7};
+        int[] expectedLength = {1, 9, 49};
+        BigDecimal initialCentroid =BigDecimal.valueOf(
+                data
+                        .stream()
+                        .filter(num -> num >= 2)
+                        .min(Integer::compareTo)
+                        .orElse(1));
 
         int totalNumberOfCharSequences = charList.size();
-        double[] centroids = new double[k];
+        BigDecimal[] centroids = new BigDecimal[k];
         List<Integer>[] groups = new List[k];
         List<Integer>[] tempGroups = new List[k];
 
+
         // set initial values
         for (int i = 0; i < k; i++) {
-            centroids[i] = mode * expectedLength[i];
-            List<Integer> group = new ArrayList<>(data.subList(i * totalNumberOfCharSequences / k, (i + 1) * totalNumberOfCharSequences / k));
+            centroids[i] = initialCentroid
+                    .multiply(BigDecimal.valueOf(expectedLength[i]));
+            List<Integer> group = new ArrayList<>();
             groups[i] = group;
             List<Integer> tempGroup = new ArrayList<>();
             tempGroups[i] = tempGroup;
+        }
+
+        for (int record : data) {
+            BigDecimal[] distances = new BigDecimal[k];
+            for (int i = 0; i < k; i++) {
+                distances[i] = BigDecimal.valueOf(record).subtract(centroids[i]).abs();
+            }
+            BigDecimal smallestDist = Arrays
+                    .stream(distances)
+                    .min(BigDecimal::compareTo)
+                    .get();
+            for (int i = 0; i < k; i++) {
+                if (distances[i].equals(smallestDist)) groups[i].add(record);
+            }
         }
 
         // running clustering
@@ -152,13 +170,16 @@ public class MorseCodeDecoderThree {
         while (!finished) {
             finished = true;
             for (int record : data) {
-                double[] distances = new double[k];
+                BigDecimal[] distances = new BigDecimal[k];
                 for (int i = 0; i < k; i++) {
-                    distances[i] = Math.abs(record - centroids[i]);
+                    distances[i] = BigDecimal.valueOf(record).subtract(centroids[i]).abs();
                 }
-                double smallestDist = Arrays.stream(distances).min().getAsDouble();
+                BigDecimal smallestDist = Arrays
+                        .stream(distances)
+                        .min(BigDecimal::compareTo)
+                        .get();
                 for (int i = 0; i < k; i++) {
-                    if (distances[i] == smallestDist) tempGroups[i].add(record);
+                    if (distances[i].equals(smallestDist)) tempGroups[i].add(record);
                 }
             }
 
@@ -167,23 +188,25 @@ public class MorseCodeDecoderThree {
             }
 
             if (!finished) {
-                double primaryCentroid = tempGroups[0]
-                        .stream()
-                        .mapToDouble(d -> d)
-                        .reduce(0, (a, b) -> a + b) / groups[0].size();
-
                 for (int i = 0; i < k; i++) {
                     groups[i].clear();
                     groups[i].addAll(tempGroups[i]);
 
-                    centroids[i] = primaryCentroid * expectedLength[i];
-
+                    if (groups[i].size() != 0) {
+                        centroids[i] = groups[i]
+                                .stream()
+                                .map(BigDecimal::valueOf)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                                .divide(BigDecimal.valueOf(groups[i].size()), 2, BigDecimal.ROUND_DOWN);
+                    }
                     tempGroups[i].clear();
                 }
             } else {
                 for (int i = 0; i < k; i++) {
-                    result[i][0] = groups[i].get(0);
-                    result[i][1] = groups[i].get(groups[i].size() - 1);
+                    if (groups[i].size() != 0) {
+                        result[i][0] = (int) Math.sqrt(groups[i].get(0));
+                        result[i][1] = (int) Math.sqrt(groups[i].get(groups[i].size() - 1)) + 1;
+                    }
                 }
             }
         }

@@ -10,7 +10,7 @@ public class Calculator {
 
     private static String evaluateIter(String expression) {
         String result = "";
-        String parenthesis = "([\\(](?!(.*\\()).*?[\\)])";
+        String parenthesis = "(\\((?!(.*\\()).*?\\))";
         Pattern parenthesisPattern = Pattern.compile(parenthesis);
         Matcher priorityGroupOne = parenthesisPattern.matcher(expression);
 
