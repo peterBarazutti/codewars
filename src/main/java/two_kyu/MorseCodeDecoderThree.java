@@ -67,7 +67,7 @@ public class MorseCodeDecoderThree {
         int[][] boundaries = determineCharBoundaries(formattedBitString);
 
 
-        String dashPattern = String.format("(?<!1)[1+]{%d,%d}(?!1)", boundaries[1][0], boundaries[2][1]);
+        String dashPattern = String.format("(?<!1)[1+]{%d,%d}(?!1)", boundaries[1][0], 1001);
         String dotPattern = String.format("(?<!1)[1+]{%d,%d}(?!1)", boundaries[0][0], boundaries[0][1]);
         String wordSpacePattern = String.format("(?<!0)[0+]{%d,%d}(?!0)", boundaries[2][0], boundaries[2][1]);
         String letterSpacePattern = String.format("(?<!0)[0+]{%d,%d}(?!0)", boundaries[1][0], boundaries[1][1]);
@@ -116,6 +116,36 @@ public class MorseCodeDecoderThree {
         for (int i = 0; i < k; i++) {
             Arrays.fill(result[i], 1000);
         }
+
+        Set<Integer> charSet = charList
+                .stream()
+                .map(String::length)
+                .collect(Collectors.toSet());
+        if (charSet.size() == 2) {
+            int[] chars = charSet
+                    .stream()
+                    .mapToInt(Number::intValue)
+                    .sorted()
+                    .toArray();
+            int minValue = chars[0];
+            int maxValue = chars[1];
+            int proportion = maxValue / minValue;
+            if (proportion >= 2 && proportion <= 5) {
+                result[0][0] = minValue;
+                result[0][1] = minValue + 1;
+                result[1][0] = maxValue;
+                result[1][1] = maxValue + 1;
+                return result;
+            } else if (proportion > 5) {
+                result[0][0] = minValue;
+                result[0][1] = minValue + 1;
+                result[2][0] = maxValue;
+                result[2][1] = maxValue + 1;
+                return result;
+            }
+        }
+
+
         List<Integer> data = charList
                 .stream()
                 .map(String::length)
@@ -148,8 +178,8 @@ public class MorseCodeDecoderThree {
             tempGroups[i] = tempGroup;
         }
 
-        groups[0] = data.stream().filter(num -> num >= 1 && num < 2 * initialCentroid).collect(Collectors.toList());
-        groups[1] = data.stream().filter(num -> num >= 2 * initialCentroid && num < 6 * initialCentroid).collect(Collectors.toList());
+        groups[0] = data.stream().filter(num -> num >= 1 && num <= 3 * initialCentroid).collect(Collectors.toList());
+        groups[1] = data.stream().filter(num -> num > 3 * initialCentroid && num < 6 * initialCentroid).collect(Collectors.toList());
         groups[2] = data.stream().filter(num -> num >= 6 * initialCentroid).collect(Collectors.toList());
 
         // running clustering
@@ -180,11 +210,23 @@ public class MorseCodeDecoderThree {
                     groups[i].addAll(tempGroups[i]);
 
                     if (groups[i].size() != 0) {
-                        centroids[i] = groups[i]
-                                .stream()
-                                .map(BigDecimal::valueOf)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                                .divide(BigDecimal.valueOf(groups[i].size()), 2, BigDecimal.ROUND_DOWN);
+                        if (initialCentroid < 4) {
+                            centroids[i] = groups[i]
+                                    .stream()
+                                    .map(BigDecimal::valueOf)
+                                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                                    .divide(BigDecimal.valueOf(groups[i].size()), 2, BigDecimal.ROUND_DOWN);
+                        } else {
+                            int intervalMin = groups[i]
+                                    .stream()
+                                    .min(Integer::compareTo)
+                                    .get();
+                            int intervalMax = groups[i]
+                                    .stream()
+                                    .max(Integer::compareTo)
+                                    .get();
+                            centroids[i] = BigDecimal.valueOf((intervalMin + intervalMax) / 2);
+                        }
                     }
                     tempGroups[i].clear();
                 }

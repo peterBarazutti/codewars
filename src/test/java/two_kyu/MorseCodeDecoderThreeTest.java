@@ -84,6 +84,11 @@ public class MorseCodeDecoderThreeTest {
     }
 
     @Test
+    public void testShortMessage() {
+        assertEquals("E E", MorseCodeDecoderThree.decodeMorse(MorseCodeDecoderThree.decodeBits("10000001")));
+    }
+
+    @Test
     public void testFinalMessage() {
         assertEquals("MGY CQD CQD SOS TITANIC POSITION 41.44 N 50.24 W. REQUIRE IMMEDIATE ASSISTANCE. COME AT ONCE. WE STRUCK AN ICEBERG. SINKING",
                 MorseCodeDecoderThree.decodeMorse(MorseCodeDecoderThree.decodeBits("0000000" +
